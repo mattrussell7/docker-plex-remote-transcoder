@@ -7,7 +7,7 @@ DISTRIBUTE_SINGLE_TRANSCODES=${DISTRIBUTE_SINGLE_TRANSCODES:-false}
 if [ "${DISTRIBUTE_SINGLE_TRANSCODES}" = true ]; then
 	cd /app/prt-JJK801/Plex-Remote-Transcoder-master
 else
-	cd /app/prt-wnielson/Plex-Remote-Transcoder-master
+	cd /app/prt-testing/Plex-Remote-Transcoder-master
 fi
 python setup.py install
 
