@@ -10,35 +10,35 @@ fi
 python setup.py install
 
 # Register with the master node
-s6-setuidgid plex ssh -tt ${MASTER_IP} <<-EOF
+#s6-setuidgid plex ssh -tt ${MASTER_IP} <<-EOF
 
 	### Variables
-	SLAVE_IP=\$(echo \$SSH_CLIENT | awk '{print \$1}')
+#	SLAVE_IP=\$(echo \$SSH_CLIENT | awk '{print \$1}')
 
 	### Set the master IP in the PRT configuration
-	echo ${MASTER_IP} | prt install
+#	echo ${MASTER_IP} | prt install
 
 	### Register with PRT
-	echo 'y' | prt add_host \${SLAVE_IP} ${SLAVE_SSH_PORT} plex
+#	echo 'y' | prt add_host \${SLAVE_IP} ${SLAVE_SSH_PORT} plex
 
 	### Register with Plex (allowed networks)
 	# Get the list of Plex allowed networks
-	plex_allowed_networks=\$(xmlstarlet sel -T -t -m "/Preferences" -v @allowedNetworks -n "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml")
+#	plex_allowed_networks=\$(xmlstarlet sel -T -t -m "/Preferences" -v @allowedNetworks -n "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml")
 
 	# Check that the slave IP is not already a Plex allowed network
-	if ! echo "\${plex_allowed_networks}" | grep -q "\${SLAVE_IP}"; then
+#	if ! echo "\${plex_allowed_networks}" | grep -q "\${SLAVE_IP}"; then
 
 		# Generate updated list
-		if [ -z "\$plex_allowed_networks" ]; then
-			plex_allowed_networks="\${SLAVE_IP}"
-		else
-			plex_allowed_networks="\${plex_allowed_networks},\${SLAVE_IP}"
-		fi
+#		if [ -z "\$plex_allowed_networks" ]; then
+#			plex_allowed_networks="\${SLAVE_IP}"
+#		else
+#			plex_allowed_networks="\${plex_allowed_networks},\${SLAVE_IP}"
+#		fi
 
 		# Apply the updated list
-		xmlstarlet ed --inplace --update "/Preferences/@allowedNetworks" -v "\${plex_allowed_networks}" "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml"
+#		xmlstarlet ed --inplace --update "/Preferences/@allowedNetworks" -v "\${plex_allowed_networks}" "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml"
 
-	fi
+#	fi
 
 	### Register with SSH ControlMaster
 	if [ -e /config/.ssh/config ]; then
