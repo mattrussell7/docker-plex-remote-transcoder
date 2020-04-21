@@ -1,16 +1,7 @@
-FROM ubuntu:xenial
-
-# Set version for s6 overlay
-ARG S6_OVERLAY_VERSION=v1.22.1.0
-ARG PLATFORM_ARCH="amd64"
+FROM mattflix-gpu:base
 
 # Set environment variables
-ENV TERM="xterm" \
-	LANG="C.UTF-8" \
-	LC_ALL="C.UTF-8" \
-	S6_BEHAVIOUR_IF_STAGE2_FAILS=2
-
-ARG DEBIAN_FRONTEND="noninteractive"
+ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2
 
 RUN \
 # Install packages
@@ -18,39 +9,42 @@ RUN \
 		curl \
 		unzip" && \
 	apt-get update && \
+	apt-get upgrade -y && \
 	apt-get install -y --no-install-recommends --no-install-suggests \
 		${buildDeps} \
-		autofs \
 		ca-certificates \
-		nfs-common \
+		inotify-tools \
+		jq \
+		nfs-kernel-server \
 		openssh-client \
 		openssh-server \
 		python-psutil \
 		python-setuptools && \
-# Add S6 overlay
-	curl -J -L "https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-${PLATFORM_ARCH}.tar.gz" \
-	| tar xz -C / && \
 # Add Plex-Remote-Transcoder
-	curl -o /tmp/prt-wnielson.zip -L "https://github.com/wnielson/Plex-Remote-Transcoder/archive/master.zip" && \
-	curl -o /tmp/prt-JJK801.zip -L "https://github.com/JJK801/Plex-Remote-Transcoder/archive/master.zip" && \
+	curl -o /tmp/prt-testing.zip -L "https://github.com/mattrussell7/Plex-Remote-Transcoder/archive/master.zip" && \
 	mkdir -p /app && \
-	unzip /tmp/prt-wnielson.zip -d /app/prt-wnielson && \
-	unzip /tmp/prt-JJK801.zip -d /app/prt-JJK801 && \
-# Add user
-	useradd -U -m -d /config -s /bin/bash plex && \
-	usermod -G users plex && \
-# Configure Autofs
-	echo "/- /etc/auto.nfsprt" >> /etc/auto.master && \
+	unzip /tmp/prt-testing.zip -d /app/prt-testing && \
+# Configure Plex-Remote-Transcoder
+	mkdir -p /var/lib/plexmediaserver && \
+	ln -s /config/Library /var/lib/plexmediaserver/Library && \
+# Configure NFS Server
+	echo "nfs             2049/tcp" >> /etc/services && \
+	mkdir -p \
+		/exports/plex_bin.d \
+		/exports/plex_conf.d \
+		/exports/plex_media.d \
+		/exports/plex_transcode.d && \
 # Configure SSHD
 	mkdir /var/run/sshd && \
+	printf "StrictHostKeyChecking no\n" >> /etc/ssh/ssh_config && \
+# Configure user
+	sed -i -e 's;/config:/bin/false;/config:/bin/bash;g' /etc/passwd && \
 # Clean
-	apt-get -y --purge autoremove ${buildDeps} && \
 	rm -rf \
 		/tmp/* \
 		/var/lib/apt/lists/* \
 		/var/tmp/*
 
 COPY root/ /
-ENTRYPOINT ["/init"]
-VOLUME /config 
-EXPOSE 22
+VOLUME /data /usr/lib/plexmediaserver /exports
+EXPOSE 22 2049/tcp
